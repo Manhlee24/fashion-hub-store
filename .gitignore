@@ -11,7 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
-
+.env
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +22,34 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Security: environment and secrets
+.env
+.env.*
+*.env
+*.secret
+*.secrets
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+*.kdbx
+!.env.example
+!.env*.example
+
+# Security: local data and backups
+*.db
+*.sqlite
+*.sqlite3
+*.dump
+*.backup
+
+# Supabase local/dev artifacts
+supabase/.temp/
+supabase/.branches/
+supabase/.env
+git rm --cached .env
+git add .gitignore
+git commit -m "chore: protect sensitive files with gitignore"
