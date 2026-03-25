@@ -1,55 +1,33 @@
-# Logs
-logs
+# Dependency directories
+node_modules/
+Frontend/node_modules/
+Backend/node_modules/
+
+# Build outputs
+dist/
+build/
+Frontend/dist/
+
+# Local env files
+.env
+.env.local
+.env.*.local
+Frontend/.env
+Backend/.env
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+thumbs.db
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-.env
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Security: environment and secrets
-.env
-.env.*
-*.env
-*.secret
-*.secrets
-*.key
-*.pem
-*.p12
-*.pfx
-*.crt
-*.cer
-*.kdbx
-!.env.example
-!.env*.example
-
-# Security: local data and backups
-*.db
-*.sqlite
-*.sqlite3
-*.dump
-*.backup
-
-# Supabase local/dev artifacts
-supabase/.temp/
-supabase/.branches/
-supabase/.env
-git rm --cached .env
-git add .gitignore
-git commit -m "chore: protect sensitive files with gitignore"
+# Project specific
+Backend/database.sqlite
+*.sql
+.gemini/
+.antigravity/
+.lovable/
