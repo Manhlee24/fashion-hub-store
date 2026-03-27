@@ -20,9 +20,18 @@ interface ProductForm {
   image_url: string;
   category_id: string;
   is_featured: boolean;
+  status: 'active' | 'hidden';
 }
 
-const emptyForm: ProductForm = { name: "", price: "", description: "", image_url: "", category_id: "", is_featured: false };
+const emptyForm: ProductForm = { 
+  name: "", 
+  price: "", 
+  description: "", 
+  image_url: "", 
+  category_id: "", 
+  is_featured: false,
+  status: 'active'
+};
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -32,7 +41,7 @@ export default function AdminProducts() {
   const [form, setForm] = useState<ProductForm>(emptyForm);
 
   const load = () => {
-    productService.getProducts().then((data) => setProducts(data ?? []));
+    productService.getProducts({ include_hidden: true }).then((data) => setProducts(data ?? []));
   };
 
   useEffect(() => {
@@ -53,6 +62,7 @@ export default function AdminProducts() {
         image_url: product.image_url ?? "",
         category_id: product.category_id ? String(product.category_id) : "",
         is_featured: !!product.is_featured,
+        status: product.status || 'active',
       });
     } else {
       setEditing(null);
@@ -73,6 +83,7 @@ export default function AdminProducts() {
       image_url: form.image_url.trim() || null,
       category_id: form.category_id ? Number(form.category_id) : null,
       is_featured: form.is_featured,
+      status: form.status,
     };
 
     try {
@@ -116,6 +127,7 @@ export default function AdminProducts() {
               <TableHead>Tên</TableHead>
               <TableHead>Giá</TableHead>
               <TableHead>Nổi bật</TableHead>
+              <TableHead>Trạng thái</TableHead>
               <TableHead className="w-24 text-right">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
@@ -130,6 +142,13 @@ export default function AdminProducts() {
                 <TableCell className="font-medium">{p.name}</TableCell>
                 <TableCell className="tabular-nums">{formatPrice(p.price)}</TableCell>
                 <TableCell>{p.is_featured ? "✓" : ""}</TableCell>
+                <TableCell>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                    p.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'
+                  }`}>
+                    {p.status === 'active' ? 'Hoạt động' : 'Đã ẩn'}
+                  </span>
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
                     <Button variant="ghost" size="icon" onClick={() => handleOpen(p)}><Pencil className="h-4 w-4" /></Button>
@@ -179,6 +198,16 @@ export default function AdminProducts() {
             <div className="flex items-center gap-2">
               <Switch checked={form.is_featured} onCheckedChange={(v) => setForm({ ...form, is_featured: v })} />
               <Label>Sản phẩm nổi bật</Label>
+            </div>
+            <div>
+              <Label>Trạng thái hiển thị</Label>
+              <Select value={form.status} onValueChange={(v: 'active' | 'hidden') => setForm({ ...form, status: v })}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Hoạt động (Công khai)</SelectItem>
+                  <SelectItem value="hidden">Đã ẩn (Kho lưu trữ)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <Button onClick={handleSave} className="w-full active:scale-[0.97]">Lưu</Button>
           </div>

@@ -1,8 +1,8 @@
-import db from '../config/db.js';
+import * as categoryService from '../services/categoryService.js';
 
 export const getCategories = async (req, res) => {
   try {
-    const [categories] = await db.query('SELECT * FROM categories');
+    const categories = await categoryService.getAllCategories();
     res.json(categories);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -10,20 +10,19 @@ export const getCategories = async (req, res) => {
 };
 
 export const createCategory = async (req, res) => {
-  const { name } = req.body;
   try {
-    const [result] = await db.query('INSERT INTO categories (name) VALUES (?)', [name]);
-    res.status(201).json({ id: result.insertId, name });
+    const category = await categoryService.createCategory(req.body);
+    res.status(201).json(category);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
 export const updateCategory = async (req, res) => {
-  const { name } = req.body;
   try {
-    await db.query('UPDATE categories SET name = ? WHERE id = ?', [name, req.params.id]);
-    res.json({ message: 'Category updated successfully' });
+    const category = await categoryService.updateCategory(req.params.id, req.body);
+    if (!category) return res.status(404).json({ message: 'Category not found' });
+    res.json(category);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -31,7 +30,8 @@ export const updateCategory = async (req, res) => {
 
 export const deleteCategory = async (req, res) => {
   try {
-    await db.query('DELETE FROM categories WHERE id = ?', [req.params.id]);
+    const result = await categoryService.deleteCategory(req.params.id);
+    if (!result) return res.status(404).json({ message: 'Category not found' });
     res.json({ message: 'Category deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });

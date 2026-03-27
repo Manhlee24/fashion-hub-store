@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import db from '../config/db.js';
+import { User } from '../models/associations.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -10,16 +10,18 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
 export const register = async (req, res) => {
   const { email, password, name } = req.body;
   try {
-    const [existing] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
-    if (existing.length > 0) return res.status(400).json({ message: 'User already exists' });
+    const existing = await User.findOne({ where: { email } });
+    if (existing) return res.status(400).json({ message: 'User already exists' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const [result] = await db.query(
-      'INSERT INTO users (email, password, name, role) VALUES (?, ?, ?, ?)',
-      [email, hashedPassword, name, 'customer']
-    );
+    const user = await User.create({
+      email,
+      password: hashedPassword,
+      name,
+      role: 'customer'
+    });
 
-    res.status(201).json({ message: 'User registered successfully', userId: result.insertId });
+    res.status(201).json({ message: 'User registered successfully', userId: user.id });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -28,10 +30,9 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   const { email, password } = req.body;
   try {
-    const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
-    if (users.length === 0) return res.status(401).json({ message: 'Invalid credentials' });
+    const user = await User.findOne({ where: { email } });
+    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
-    const user = users[0];
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
 
@@ -44,9 +45,11 @@ export const login = async (req, res) => {
 
 export const getProfile = async (req, res) => {
   try {
-    const [users] = await db.query('SELECT id, email, name, role FROM users WHERE id = ?', [req.user.id]);
-    if (users.length === 0) return res.status(404).json({ message: 'User not found' });
-    res.json(users[0]);
+    const user = await User.findByPk(req.user.id, {
+      attributes: ['id', 'email', 'name', 'role']
+    });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

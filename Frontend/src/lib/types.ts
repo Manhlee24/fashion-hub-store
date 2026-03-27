@@ -13,6 +13,7 @@ export interface Product {
   category_id?: number;
   category_name?: string;
   is_featured: boolean;
+  status?: 'active' | 'hidden';
   created_at: string;
 }
 

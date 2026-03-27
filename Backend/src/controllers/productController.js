@@ -1,26 +1,8 @@
-import db from '../config/db.js';
+import * as productService from '../services/productService.js';
 
 export const getProducts = async (req, res) => {
-  const { category_id, is_featured } = req.query;
   try {
-    let query = 'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id';
-    let params = [];
-    let conditions = [];
-
-    if (category_id) {
-      conditions.push('p.category_id = ?');
-      params.push(category_id);
-    }
-    if (is_featured !== undefined) {
-      conditions.push('p.is_featured = ?');
-      params.push(is_featured === 'true' ? 1 : 0);
-    }
-
-    if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ');
-    }
-
-    const [products] = await db.query(query, params);
+    const products = await productService.getAllProducts(req.query);
     res.json(products);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -29,35 +11,28 @@ export const getProducts = async (req, res) => {
 
 export const getProductById = async (req, res) => {
   try {
-    const [products] = await db.query('SELECT * FROM products WHERE id = ?', [req.params.id]);
-    if (products.length === 0) return res.status(404).json({ message: 'Product not found' });
-    res.json(products[0]);
+    const product = await productService.getProductById(req.params.id, req.query.include_hidden === 'true');
+    if (!product) return res.status(404).json({ message: 'Sản phẩm không tồn tại hoặc đã bị ẩn' });
+    res.json(product);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
 export const createProduct = async (req, res) => {
-  const { name, price, description, image_url, category_id, is_featured } = req.body;
   try {
-    const [result] = await db.query(
-      'INSERT INTO products (name, price, description, image_url, category_id, is_featured) VALUES (?, ?, ?, ?, ?, ?)',
-      [name, price, description, image_url, category_id, is_featured]
-    );
-    res.status(201).json({ id: result.insertId, name });
+    const product = await productService.createProduct(req.body);
+    res.status(201).json(product);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
 export const updateProduct = async (req, res) => {
-  const { name, price, description, image_url, category_id, is_featured } = req.body;
   try {
-    await db.query(
-      'UPDATE products SET name = ?, price = ?, description = ?, image_url = ?, category_id = ?, is_featured = ? WHERE id = ?',
-      [name, price, description, image_url, category_id, is_featured, req.params.id]
-    );
-    res.json({ message: 'Product updated successfully' });
+    const product = await productService.updateProduct(req.params.id, req.body);
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+    res.json(product);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -65,8 +40,17 @@ export const updateProduct = async (req, res) => {
 
 export const deleteProduct = async (req, res) => {
   try {
-    await db.query('DELETE FROM products WHERE id = ?', [req.params.id]);
-    res.json({ message: 'Product deleted successfully' });
+    const result = await productService.deleteProduct(req.params.id);
+    if (!result) return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+    
+    if (result.type === 'soft') {
+      res.json({ 
+        message: 'Sản phẩm đã có trong đơn hàng nên không thể xóa vĩnh viễn. Đã chuyển trạng thái sang "Ẩn".',
+        is_soft_deleted: true 
+      });
+    } else {
+      res.json({ message: 'Đã xóa sản phẩm vĩnh viễn' });
+    }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

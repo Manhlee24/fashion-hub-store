@@ -9,7 +9,7 @@ const navItems = [
   { label: "Danh mục", to: "/admin/categories", icon: FolderOpen },
   { label: "Sản phẩm", to: "/admin/products", icon: Package },
   { label: "Đơn hàng", to: "/admin/orders", icon: ShoppingCart },
-  { label: "Banner", to: "/admin/banners", icon: Image },
+  { label: "Hero Section", to: "/admin/heroes", icon: Image },
 ];
 
 export default function AdminLayout() {

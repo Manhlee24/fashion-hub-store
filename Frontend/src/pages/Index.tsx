@@ -1,130 +1,98 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { bannerService } from "@/services/bannerService";
 import { productService } from "@/services/productService";
-import { Product, Banner } from "@/lib/types";
+import { Product } from "@/lib/types";
 import ProductCard from "@/components/features/products/ProductCard";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+
+import Hero from "@/components/features/home/Hero";
 
 export default function Index() {
-  const [banners, setBanners] = useState<Banner[]>([]);
   const [featured, setFeatured] = useState<Product[]>([]);
   const [latest, setLatest] = useState<Product[]>([]);
-  const [bannerIdx, setBannerIdx] = useState(0);
 
   useEffect(() => {
-    bannerService.getBanners().then((data) => setBanners(data ?? []));
     productService.getProducts({ is_featured: true }).then((data) => setFeatured(data.slice(0, 8)));
     productService.getProducts().then((data) => setLatest(data.slice(0, 8)));
   }, []);
 
-  const nextBanner = () => setBannerIdx((i) => (i + 1) % banners.length);
-  const prevBanner = () => setBannerIdx((i) => (i - 1 + banners.length) % banners.length);
-
   return (
-    <div>
-      {/* Banner */}
-      {banners.length > 0 && (
-        <section className="relative w-full aspect-[21/9] md:aspect-[3/1] overflow-hidden bg-muted">
-          <img
-            src={banners[bannerIdx].image_url}
-            alt="Banner"
-            className="h-full w-full object-cover transition-opacity duration-500"
-          />
-          {banners.length > 1 && (
-            <>
-              <button
-                onClick={prevBanner}
-                className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-background/70 p-2 backdrop-blur hover:bg-background transition-colors active:scale-95"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button
-                onClick={nextBanner}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-background/70 p-2 backdrop-blur hover:bg-background transition-colors active:scale-95"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-                {banners.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setBannerIdx(i)}
-                    className={`h-1.5 rounded-full transition-all ${
-                      i === bannerIdx ? "w-6 bg-foreground" : "w-1.5 bg-foreground/40"
-                    }`}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-        </section>
-      )}
+    <div className="bg-white">
+      <Hero />
 
-      {/* Banner Placeholder if empty */}
-      {banners.length === 0 && (
-        <section className="bg-foreground text-background">
-          <div className="container mx-auto px-4 py-20 md:py-28 text-center">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-balance leading-[1.1]">
-              Phong cách nam giới hiện đại
-            </h1>
-            <p className="mt-4 text-lg text-background/70 max-w-lg mx-auto">
-              Bộ sưu tập mới nhất — tối giản, thanh lịch, tự tin.
-            </p>
-            <Link to="/products">
-              <Button
-                variant="secondary"
-                size="lg"
-                className="mt-8 active:scale-95"
-              >
-                Khám phá ngay <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-        </section>
-      )}
-
-      {/* Featured */}
+      {/* Featured Section */}
       {featured.length > 0 && (
-        <section className="container mx-auto px-4 py-16">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold tracking-tight">Sản phẩm nổi bật</h2>
-            <Link to="/products" className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
-              Xem tất cả <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {featured.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
+        <section className="py-24 overflow-hidden bg-[#fafafa]">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+              <div className="space-y-2">
+                <div className="text-emerald-500 font-bold text-[10px] uppercase tracking-[0.3em] animate-fade-in-down">Đề xuất cho bạn</div>
+                <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase animate-fade-in-up">Sản phẩm nổi bật</h2>
+              </div>
+              <Link 
+                to="/products" 
+                className="group inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest text-muted-foreground hover:text-black transition-all border-b-2 border-transparent hover:border-black pb-1 active:scale-95"
+              >
+                Xem tất cả <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </div>
+            
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 animate-fade-in-up delay-100">
+              {featured.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
           </div>
         </section>
       )}
 
-      {/* Latest */}
-      {latest.length > 0 && (
-        <section className="container mx-auto px-4 py-16 pt-0">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold tracking-tight">Sản phẩm mới</h2>
-            <Link to="/products" className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
-              Xem tất cả <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
+      {/* Social / Trust Section (Optional Addition for "messy" fix) */}
+      <section className="py-20 border-y border-black/5 bg-white overflow-hidden">
+        <div className="container mx-auto px-4 text-center">
+          <div className="flex flex-wrap justify-center items-center gap-12 md:gap-24 opacity-30 grayscale hover:grayscale-0 transition-all duration-700">
+             <div className="text-2xl font-black tracking-tighter italic uppercase">VOGUE</div>
+             <div className="text-2xl font-black tracking-tighter italic uppercase">GQ</div>
+             <div className="text-2xl font-black tracking-tighter italic uppercase">ELLE</div>
+             <div className="text-2xl font-black tracking-tighter italic uppercase">BAZAAR</div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {latest.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
+        </div>
+      </section>
+
+      {/* Latest Section */}
+      {latest.length > 0 && (
+        <section className="py-24 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+              <div className="space-y-2">
+                <div className="text-blue-500 font-bold text-[10px] uppercase tracking-[0.3em]">Hàng mới về</div>
+                <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase">Bộ sưu tập mới</h2>
+              </div>
+              <Link 
+                to="/products" 
+                className="group inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest text-muted-foreground hover:text-black transition-all border-b-2 border-transparent hover:border-black pb-1 active:scale-95"
+              >
+                Xem tất cả <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </div>
+            
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+              {latest.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
           </div>
         </section>
       )}
 
       {featured.length === 0 && latest.length === 0 && (
-        <section className="container mx-auto px-4 py-20 text-center">
-          <p className="text-muted-foreground">Chưa có sản phẩm nào. Hãy thêm sản phẩm trong trang quản trị.</p>
-          <Link to="/admin">
-            <Button variant="outline" className="mt-4 active:scale-95">Đến trang quản trị</Button>
-          </Link>
+        <section className="container mx-auto px-4 py-32 text-center">
+          <div className="max-w-md mx-auto space-y-6">
+            <p className="text-muted-foreground text-lg italic font-medium">Hiện tại chúng tôi đang chuẩn bị các bộ sưu tập mới nhất. Vui lòng quay lại sau.</p>
+            <Link to="/admin">
+              <Button size="lg" variant="outline" className="rounded-full px-10 border-2 font-bold uppercase tracking-widest active:scale-95">Quản trị viên</Button>
+            </Link>
+          </div>
         </section>
       )}
     </div>

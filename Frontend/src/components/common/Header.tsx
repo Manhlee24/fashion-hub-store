@@ -23,22 +23,24 @@ export default function Header() {
 
 
   return (
-    <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link to="/" className="text-xl font-bold tracking-[0.2em] uppercase">
-          HNAM STORE
+    <header className="sticky top-0 z-50 glass border-b-0">
+      <div className="container mx-auto flex h-20 items-center justify-between px-4">
+        <Link to="/" className="text-2xl font-black tracking-[-0.05em] uppercase flex items-center gap-1 group">
+          <span className="bg-black text-white px-2 py-0.5 rounded-sm group-hover:bg-emerald-500 transition-colors">H</span>
+          NAM<span className="text-[10px] align-top mt-1 font-bold">™</span>
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-8">
-          {navLinks.map((l) => <Link
+        <nav className="hidden md:flex items-center gap-10">
+          {navLinks.map((l) => (
+            <Link
               key={l.to}
               to={l.to}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-            
+              className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground transition-all hover:text-black relative after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-black after:transition-all hover:after:w-full"
+            >
               {l.label}
             </Link>
-          )}
+          ))}
         </nav>
 
         <div className="flex items-center gap-3">
