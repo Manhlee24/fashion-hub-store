@@ -38,27 +38,33 @@ export default function Hero() {
       </div>
 
       <div className="container mx-auto px-4 relative z-20">
-        <div className="max-w-3xl space-y-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-white text-[10px] font-bold tracking-widest uppercase animate-fade-in-down">
-            <Sparkles className="h-3 w-3 text-yellow-400" />
-            <span>Bộ sưu tập mới nhất đã sẵn sàng</span>
+        <div className="max-w-4xl space-y-10">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-white text-[10px] font-bold tracking-[0.3em] uppercase animate-fade-in-down">
+            <Sparkles className="h-3 w-3 text-emerald-400" />
+            <span>Bộ sưu tập Mới 2026</span>
           </div>
 
-          <h1 className="text-5xl md:text-8xl font-black text-white flex flex-col gap-2 md:gap-4 tracking-tighter animate-fade-in-up leading-[0.85] uppercase">
+          <h1 className="text-6xl md:text-8xl lg:text-9xl font-black text-white flex flex-col gap-2 tracking-tighter leading-[1.2] uppercase">
             {current.title?.split('\n').map((line: string, i: number, arr: string[]) => {
-              // If there are 3 lines, the middle one (index 1) gets the gradient
-              // If there are 2 lines, the second one (index 1) gets the gradient
-              // If 1 line, no gradient
               const shouldGradient = arr.length > 1 && i === 1;
               return (
-                <span key={i} className={shouldGradient ? "text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400" : ""}>
-                  {line}
-                </span>
+                <div key={i} className="overflow-hidden py-10 -my-8 text-wrap">
+                  <span 
+                    className={`block animate-reveal-up ${shouldGradient ? "text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400" : ""}`}
+                    style={{ animationDelay: `${i * 150}ms` }}
+                  >
+                    {line}
+                  </span>
+                </div>
               );
-            }) || current.title}
+            }) || (
+              <div className="overflow-hidden py-10 -my-8 text-wrap">
+                <span className="block animate-reveal-up">{current.title}</span>
+              </div>
+            )}
           </h1>
 
-          <p className="text-base md:text-xl text-white/50 max-w-xl font-medium animate-fade-in-up delay-100 uppercase tracking-[0.2em] leading-relaxed">
+          <p className="text-sm md:text-lg text-white/40 max-w-xl font-medium animate-reveal-up delay-300 uppercase tracking-[0.4em] leading-relaxed">
             {current.subtitle}
           </p>
 
@@ -66,10 +72,10 @@ export default function Hero() {
             <Link to={current.button_link || "/products"}>
               <Button
                 size="lg"
-                className="h-16 px-10 text-xl font-black bg-white text-black hover:bg-emerald-400 hover:text-black rounded-full group active:scale-95 transition-all shadow-xl shadow-white/10"
+                className="h-16 px-12 text-lg font-bold bg-white text-black hover:bg-emerald-400 hover:text-black rounded-none group active:scale-95 transition-all duration-500 shadow-2xl shadow-white/5"
               >
-                {current.button_text || "KHÁM PHÁ"}
-                <ShoppingBag className="ml-2 h-6 w-6 transition-transform group-hover:rotate-12" />
+                {current.button_text || "KHÁM PHÁ NGAY"}
+                <ArrowRight className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-2" />
               </Button>
             </Link>
           </div>
@@ -89,6 +95,12 @@ export default function Hero() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Scroll Indicator */}
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-4 opacity-30 hover:opacity-100 transition-opacity cursor-pointer animate-fade-in-up delay-700">
+        <span className="text-[8px] text-white uppercase tracking-[0.5em] font-bold translate-x-[1px]">Cuộn xuống</span>
+        <div className="w-[1px] h-12 bg-gradient-to-b from-white to-transparent" />
       </div>
     </section>
   );

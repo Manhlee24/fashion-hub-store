@@ -5,7 +5,7 @@ import { Product } from "@/lib/types";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Minus, Plus, ShoppingBag, ArrowLeft, Truck, ShieldCheck, Star, Share2, Heart } from "lucide-react";
+import { Minus, Plus, ShoppingBag, ArrowLeft, Truck, ShieldCheck, Star, Share2, Heart, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import ProductCard from "@/components/features/products/ProductCard";
@@ -17,15 +17,28 @@ export default function ProductDetail() {
   const [related, setRelated] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
+  const [selectedSize, setSelectedSize] = useState<string>("");
   const { addItem } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const catName = (product?.category?.name || product?.category_name || "").toLowerCase();
+  const prodName = (product?.name || "").toLowerCase();
+
+  const isShoe = catName.includes("giày") || catName.includes("dép") || catName.includes("ủng") ||
+    prodName.includes("giày") || prodName.includes("dép") || prodName.includes("ủng") || prodName.includes("boot");
+
+  const isAccessory = catName.includes("phụ kiện") || catName.includes("trang sức") ||
+    prodName.includes("ví") || prodName.includes("thắt lưng") || prodName.includes("kính") || prodName.includes("nước hoa");
+
+  const hasSize = !isAccessory;
+  const sizes = isShoe ? ["39", "40", "41", "42", "43", "44"] : ["S", "M", "L", "XL", "XXL"];
 
   useEffect(() => {
     if (!id) return;
     window.scrollTo(0, 0);
     setLoading(true);
-    
+
     productService.getProductById(id).then((data) => {
       setProduct(data);
       if (data?.category_id) {
@@ -46,14 +59,15 @@ export default function ProductDetail() {
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="grid md:grid-cols-2 gap-12">
-          <div className="aspect-[3/4] bg-muted rounded-2xl animate-pulse" />
+          <div className="aspect-[3/4] bg-muted shimmer shadow-xl" />
           <div className="space-y-6">
-            <div className="h-4 bg-muted rounded w-1/4 animate-pulse" />
-            <div className="h-10 bg-muted rounded w-3/4 animate-pulse" />
-            <div className="h-6 bg-muted rounded w-1/4 animate-pulse" />
+            <div className="h-4 bg-muted shimmer w-1/4" />
+            <div className="h-10 bg-muted shimmer w-3/4" />
+            <div className="h-6 bg-muted shimmer w-1/4" />
             <div className="space-y-4">
-              <div className="h-4 bg-muted rounded animate-pulse" />
-              <div className="h-4 bg-muted rounded animate-pulse" />
+              <div className="h-4 bg-muted shimmer" />
+              <div className="h-4 bg-muted shimmer" />
+              <div className="h-32 bg-muted shimmer" />
             </div>
           </div>
         </div>
@@ -78,17 +92,31 @@ export default function ProductDetail() {
       navigate("/auth");
       return;
     }
+    if (hasSize && !selectedSize) {
+      toast.error("Vui lòng chọn kích cỡ/size");
+      return;
+    }
     addItem(
-      { id: product.id, product_name: product.name, price: product.price, image_url: product.image_url },
+      {
+        id: product.id,
+        product_name: product.name,
+        price: product.price,
+        image_url: product.image_url,
+        size: hasSize ? selectedSize : undefined
+      },
       qty
     );
-    toast.success("Đã thêm vào giỏ hàng");
+    toast.success(`Đã thêm ${product.name} ${hasSize ? `(Size ${selectedSize})` : ""} vào giỏ hàng`);
   };
 
   const handleBuyNow = () => {
     if (!user) {
       toast.error("Vui lòng đăng nhập để mua hàng");
       navigate("/auth");
+      return;
+    }
+    if (hasSize && !selectedSize) {
+      toast.error("Vui lòng chọn kích cỡ/size");
       return;
     }
     navigate("/checkout", {
@@ -98,7 +126,8 @@ export default function ProductDetail() {
           product_name: product.name,
           price: product.price,
           image_url: product.image_url,
-          quantity: qty
+          quantity: qty,
+          size: hasSize ? selectedSize : undefined
         }
       }
     });
@@ -106,16 +135,14 @@ export default function ProductDetail() {
 
   return (
     <div className="pb-20">
-      <div className="bg-muted/30 border-b">
-        <div className="container mx-auto px-4 py-4">
-          <nav className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-widest font-medium">
-            <Link to="/" className="hover:text-foreground">Trang chủ</Link>
-            <span>/</span>
-            <Link to="/products" className="hover:text-foreground">Sản phẩm</Link>
-            <span>/</span>
-            <span className="text-foreground">{product.name}</span>
-          </nav>
-        </div>
+      <div className="container mx-auto px-4 py-8">
+        <nav className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-12 animate-fade-in">
+          <Link to="/" className="hover:text-black transition-colors">HNAMSTORE</Link>
+          <ChevronRight className="h-3 w-3" />
+          <Link to="/products" className="hover:text-black transition-colors">Sản phẩm</Link>
+          <ChevronRight className="h-3 w-3" />
+          <span className="text-black truncate max-w-[200px]">{product.name}</span>
+        </nav>
       </div>
 
       <div className="container mx-auto px-4 py-12">
@@ -139,7 +166,7 @@ export default function ProductDetail() {
             <div className="space-y-4 mb-8">
               <div className="flex items-center gap-2 text-sm font-bold text-emerald-600">
                 <Star className="h-4 w-4 fill-emerald-600" />
-                <span>Sản phẩm chính hãng Fashion Hub</span>
+                <span>Sản phẩm chính hãng HNAMSTORE</span>
               </div>
               <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight uppercase">
                 {product.name}
@@ -156,6 +183,29 @@ export default function ProductDetail() {
                   {product.description || "Chưa có mô tả chi tiết cho sản phẩm này."}
                 </p>
               </div>
+
+              {hasSize && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold uppercase tracking-wider">Kích cỡ / Size</h3>
+                    <button className="text-[10px] font-bold text-muted-foreground uppercase underline underline-offset-4 hover:text-primary transition-colors">Hướng dẫn chọn size</button>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {sizes.map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setSelectedSize(s)}
+                        className={`h-12 min-w-[3rem] px-4 rounded-xl border-2 font-bold text-sm transition-all duration-300 active:scale-95 ${selectedSize === s
+                            ? "border-primary bg-primary text-white shadow-lg shadow-primary/20 scale-105"
+                            : "border-black/5 hover:border-black/20 text-foreground"
+                          }`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="flex gap-4 items-start p-4 bg-muted/20 rounded-2xl border border-black/5">

@@ -2,7 +2,7 @@ import { Product, Category } from '../models/associations.js';
 import { Op } from 'sequelize';
 
 export const getAllProducts = async (options = {}) => {
-  const { include_hidden, is_featured, category_id, search } = options;
+  const { include_hidden, is_featured, category_id, search, min_price, max_price, sort } = options;
   
   const where = {};
   if (include_hidden !== 'true' && include_hidden !== true) where.status = 'active';
@@ -11,11 +11,22 @@ export const getAllProducts = async (options = {}) => {
   if (search) {
     where.name = { [Op.like]: `%${search}%` };
   }
+  
+  if (min_price || max_price) {
+    where.price = {
+      [Op.between]: [min_price || 0, max_price || 999999999]
+    };
+  }
+
+  let order = [['created_at', 'DESC']];
+  if (sort === 'price_asc') order = [['price', 'ASC']];
+  if (sort === 'price_desc') order = [['price', 'DESC']];
+  if (sort === 'newest') order = [['created_at', 'DESC']];
 
   return await Product.findAll({
     where,
     include: [{ model: Category, as: 'category' }],
-    order: [['created_at', 'DESC']]
+    order
   });
 };
 

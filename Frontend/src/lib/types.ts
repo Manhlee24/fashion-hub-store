@@ -12,8 +12,10 @@ export interface Product {
   image_url?: string;
   category_id?: number;
   category_name?: string;
+  category?: Category;
   is_featured: boolean;
   status?: 'active' | 'hidden';
+  size?: string;
   created_at: string;
 }
 

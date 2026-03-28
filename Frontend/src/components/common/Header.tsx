@@ -3,31 +3,43 @@ import { ShoppingBag, User, Menu, X, LogOut } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger } from
-"@/components/ui/dropdown-menu";
+  DropdownMenuTrigger
+} from
+  "@/components/ui/dropdown-menu";
 
 export default function Header() {
   const { totalItems } = useCart();
   const { user, isAdmin, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const navLinks = [
-  { label: "Trang chủ", to: "/" },
-  { label: "Sản phẩm", to: "/products" }];
-
+    { label: "Trang chủ", to: "/" },
+    { label: "Sản phẩm", to: "/products" },
+    { label: "Về chúng tôi", to: "/about" },
+    { label: "Liên hệ", to: "/contact" }
+  ];
 
   return (
-    <header className="sticky top-0 z-50 glass border-b-0">
-      <div className="container mx-auto flex h-20 items-center justify-between px-4">
-        <Link to="/" className="text-2xl font-black tracking-[-0.05em] uppercase flex items-center gap-1 group">
-          <span className="bg-black text-white px-2 py-0.5 rounded-sm group-hover:bg-emerald-500 transition-colors">H</span>
-          NAM<span className="text-[10px] align-top mt-1 font-bold">™</span>
+    <header className={`sticky top-0 z-50 transition-all duration-500 ${isScrolled ? "glass h-16 shadow-premium" : "bg-transparent h-20"}`}>
+      <div className="container mx-auto flex h-full items-center justify-between px-4">
+        <Link to="/" className="text-xl font-black tracking-[-0.07em] uppercase flex items-center gap-1.5 group">
+          <span className="bg-black text-white px-2.5 py-1 rounded-none group-hover:bg-emerald-500 transition-all duration-500">H</span>
+          NAM<span className="text-[9px] align-top mt-1 font-bold opacity-50">™</span>
         </Link>
 
         {/* Desktop nav */}
@@ -36,7 +48,7 @@ export default function Header() {
             <Link
               key={l.to}
               to={l.to}
-              className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground transition-all hover:text-black relative after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-black after:transition-all hover:after:w-full"
+              className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground transition-all duration-500 hover:text-black relative after:absolute after:bottom-[-6px] after:left-1/2 after:-translate-x-1/2 after:h-[1.5px] after:w-0 after:bg-black after:transition-all hover:after:w-2/3"
             >
               {l.label}
             </Link>
@@ -56,7 +68,7 @@ export default function Header() {
           )}
 
           {user ?
-          <DropdownMenu>
+            <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="active:scale-95">
                   <User className="h-5 w-5" />
@@ -67,10 +79,10 @@ export default function Header() {
                   <Link to="/orders">Đơn hàng của tôi</Link>
                 </DropdownMenuItem>
                 {isAdmin &&
-              <DropdownMenuItem asChild>
+                  <DropdownMenuItem asChild>
                     <Link to="/admin">Quản trị</Link>
                   </DropdownMenuItem>
-              }
+                }
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => signOut()}>
                   <LogOut className="mr-2 h-4 w-4" /> Đăng xuất
@@ -78,7 +90,7 @@ export default function Header() {
               </DropdownMenuContent>
             </DropdownMenu> :
 
-          <Link to="/auth">
+            <Link to="/auth">
               <Button variant="outline" size="sm" className="active:scale-95">
                 Đăng nhập
               </Button>
@@ -91,7 +103,7 @@ export default function Header() {
             size="icon"
             className="md:hidden active:scale-95"
             onClick={() => setMobileOpen(!mobileOpen)}>
-            
+
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
@@ -99,18 +111,18 @@ export default function Header() {
 
       {/* Mobile nav */}
       {mobileOpen &&
-      <div className="md:hidden border-t bg-background">
+        <div className="md:hidden border-t bg-background">
           <nav className="container mx-auto flex flex-col gap-1 px-4 py-3">
             {navLinks.map((l) =>
-          <Link
-            key={l.to}
-            to={l.to}
-            onClick={() => setMobileOpen(false)}
-            className="px-3 py-2 text-sm font-medium rounded-md hover:bg-accent transition-colors">
-            
+              <Link
+                key={l.to}
+                to={l.to}
+                onClick={() => setMobileOpen(false)}
+                className="px-3 py-2 text-sm font-medium rounded-md hover:bg-accent transition-colors">
+
                 {l.label}
               </Link>
-          )}
+            )}
           </nav>
         </div>
       }
