@@ -236,8 +236,19 @@ export default function AdminOrders() {
                           {orderItems.map((item) => (
                             <TableRow key={item.id}>
                               <TableCell className="px-6 py-5">
-                                 <p className="text-[11px] font-black uppercase tracking-tight">{item.product_name}</p>
-                                 <p className="text-[9px] font-black text-black/30 tabular-nums uppercase">{formatPrice(item.unit_price)}</p>
+                                 <div className="flex items-center gap-3">
+                                   <div className="h-12 w-12 bg-muted/30 rounded-xl overflow-hidden flex-shrink-0 border border-black/5">
+                                     {item.product?.image_url ? (
+                                       <img src={item.product.image_url} alt={item.product_name} className="h-full w-full object-cover" />
+                                     ) : (
+                                       <div className="h-full w-full flex items-center justify-center text-muted-foreground text-[8px] font-bold uppercase">No Img</div>
+                                     )}
+                                   </div>
+                                   <div>
+                                     <p className="text-[11px] font-black uppercase tracking-tight line-clamp-1">{item.product_name}</p>
+                                     <p className="text-[9px] font-black text-black/40 tabular-nums uppercase mt-0.5">Size {item.size} • {formatPrice(item.unit_price)}</p>
+                                   </div>
+                                 </div>
                               </TableCell>
                               <TableCell className="px-6 py-5 text-center text-[11px] font-black">×{item.quantity}</TableCell>
                               <TableCell className="px-6 py-5 text-right font-black text-[11px] tabular-nums">

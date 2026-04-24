@@ -3,8 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { orderService } from "@/services/orderService";
 import { Badge } from "@/components/ui/badge";
-import { Package, ChevronRight, ArrowRight, Calendar, User, MapPin, Search } from "lucide-react";
+import { Package, ChevronRight, ArrowRight, Calendar, User, MapPin, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 const statusMap: Record<string, { label: string; bg: string; text: string }> = {
   pending: { label: "Chờ duyệt", bg: "bg-amber-500/10", text: "text-amber-600" },
@@ -19,6 +21,42 @@ export default function Orders() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [cancelOrderId, setCancelOrderId] = useState<number | null>(null);
+
+  const handleViewDetails = async (id: number) => {
+    setIsDetailsOpen(true);
+    setDetailsLoading(true);
+    try {
+      const data = await orderService.getOrderById(id);
+      setSelectedOrder(data);
+    } catch (error) {
+      console.error("Failed to fetch order details", error);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const handleCancelOrder = (id: number) => {
+    setCancelOrderId(id);
+  };
+
+  const confirmCancelOrder = async () => {
+    if (!cancelOrderId) return;
+    try {
+      await orderService.updateOrderStatus(cancelOrderId, 'cancelled');
+      toast.success("Hủy đơn hàng thành công");
+      
+      // Update local state
+      setOrders(orders.map(o => o.id === cancelOrderId ? { ...o, status: 'cancelled' } : o));
+    } catch (error: any) {
+      toast.error(error.message || "Không thể hủy đơn hàng");
+    } finally {
+      setCancelOrderId(null);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -167,11 +205,19 @@ export default function Orders() {
                         </div>
 
                         <div className="flex flex-col gap-3">
-                          <Button variant="outline" className="h-12 rounded-full text-[10px] font-black uppercase tracking-widest border-2 hover:bg-black hover:text-white transition-all duration-500">
+                          <Button 
+                            onClick={() => handleViewDetails(order.id)}
+                            variant="outline" 
+                            className="h-12 rounded-full text-[10px] font-black uppercase tracking-widest border-2 hover:bg-black hover:text-white transition-all duration-500"
+                          >
                             Chi tiết
                           </Button>
                           {order.status === 'pending' && (
-                            <Button variant="ghost" className="h-12 rounded-full text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-all duration-500">
+                            <Button 
+                              onClick={() => handleCancelOrder(order.id)}
+                              variant="ghost" 
+                              className="h-12 rounded-full text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-all duration-500"
+                            >
                               Hủy đơn hàng
                             </Button>
                           )}
@@ -195,6 +241,101 @@ export default function Orders() {
           </p>
         </div>
       </main>
+
+      {/* Order Details Dialog */}
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="sm:max-w-[700px] rounded-[32px] p-0 overflow-hidden bg-white">
+          <div className="p-8 md:p-12 max-h-[85vh] overflow-y-auto">
+            <DialogHeader className="mb-8 text-left">
+              <DialogTitle className="text-2xl md:text-3xl font-black uppercase tracking-tight text-black">Chi tiết đơn hàng</DialogTitle>
+              <DialogDescription className="text-muted-foreground font-medium">
+                Mã đơn: #{selectedOrder?.id?.toString().split('-')[0].toUpperCase()}
+              </DialogDescription>
+            </DialogHeader>
+
+            {detailsLoading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-black/20" />
+                <p className="text-sm font-medium text-muted-foreground">Đang tải chi tiết...</p>
+              </div>
+            ) : selectedOrder ? (
+              <div className="space-y-10 animate-fade-in-up">
+                <div className="space-y-6">
+                  <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground border-b border-black/5 pb-2">Sản phẩm</h3>
+                  <div className="space-y-6">
+                    {selectedOrder.items?.map((item: any, idx: number) => (
+                      <div key={idx} className="flex gap-4 items-center">
+                        <div className="h-20 w-20 bg-muted/30 rounded-2xl overflow-hidden flex-shrink-0 border border-black/5">
+                          {item.product?.image_url ? (
+                            <img src={item.product.image_url} alt={item.product_name} className="h-full w-full object-cover hover:scale-105 transition-transform duration-500" />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center text-muted-foreground text-xs font-bold uppercase">No Image</div>
+                          )}
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <p className="font-bold uppercase tracking-tight text-black line-clamp-1">{item.product_name}</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                            Size: {item.size} • Số lượng: {item.quantity}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-black tracking-tight text-black">{formatPrice(Number(item.unit_price) * item.quantity)}</p>
+                          {item.quantity > 1 && (
+                            <p className="text-[10px] font-medium text-muted-foreground">{formatPrice(Number(item.unit_price))} / sp</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-muted/30 rounded-3xl p-6 md:p-8 space-y-4 border border-black/5">
+                  <div className="flex justify-between items-center text-sm font-bold">
+                    <span className="text-muted-foreground">Trạng thái:</span>
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${statusMap[selectedOrder.status]?.bg || 'bg-muted'} ${statusMap[selectedOrder.status]?.text || 'text-muted-foreground'}`}>
+                      {statusMap[selectedOrder.status]?.label || selectedOrder.status}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm font-bold text-black">
+                    <span className="text-muted-foreground">Ngày đặt:</span>
+                    <span>{new Date(selectedOrder.created_at).toLocaleString("vi-VN")}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm font-bold text-black">
+                    <span className="text-muted-foreground">Người nhận:</span>
+                    <span className="text-right">{selectedOrder.receiver_name} <br className="md:hidden" /> {selectedOrder.phone && `(${selectedOrder.phone})`}</span>
+                  </div>
+                  <div className="pt-4 border-t border-black/10 flex justify-between items-end mt-4">
+                    <span className="text-sm font-black uppercase tracking-widest text-muted-foreground">Tổng thanh toán</span>
+                    <span className="text-3xl font-black tracking-tighter text-black">{formatPrice(selectedOrder.total_amount)}</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-20 text-muted-foreground font-medium">Không tìm thấy thông tin chi tiết.</div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={!!cancelOrderId} onOpenChange={(open) => !open && setCancelOrderId(null)}>
+        <DialogContent className="sm:max-w-[400px] rounded-3xl p-6 bg-white">
+          <DialogHeader className="mb-4 text-left">
+            <DialogTitle className="text-xl font-black uppercase tracking-tight text-black">Hủy đơn hàng</DialogTitle>
+            <DialogDescription className="text-muted-foreground font-medium mt-2">
+              Bạn có chắc chắn muốn hủy đơn hàng này? Hành động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 justify-end mt-4">
+            <Button variant="outline" onClick={() => setCancelOrderId(null)} className="rounded-full font-bold">
+              Đóng
+            </Button>
+            <Button variant="destructive" onClick={confirmCancelOrder} className="rounded-full font-bold bg-rose-500 hover:bg-rose-600">
+              Đồng ý Hủy
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

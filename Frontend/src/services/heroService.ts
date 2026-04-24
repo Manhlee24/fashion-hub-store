@@ -12,4 +12,10 @@ export const heroService = {
     
   deleteHero: (id: string | number) => 
     api.delete(`/heroes/${id}`),
+
+  uploadImage: (file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return api.upload('/upload', formData);
+  }
 };

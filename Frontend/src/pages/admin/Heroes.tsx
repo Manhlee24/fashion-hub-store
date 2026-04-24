@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink, Upload } from "lucide-react";
 
 interface HeroForm {
   image_url: string;
@@ -33,6 +33,7 @@ export default function AdminHeroes() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
   const [form, setForm] = useState<HeroForm>(emptyForm);
+  const [uploading, setUploading] = useState(false);
 
   const load = () => {
     heroService.getHeroes().then((data: any) => setHeroes(data ?? []));
@@ -58,8 +59,24 @@ export default function AdminHeroes() {
     setOpen(true);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const res = await heroService.uploadImage(file);
+      setForm({ ...form, image_url: res.url });
+      toast.success("Tải ảnh lên thành công");
+    } catch (error: any) {
+      toast.error(error.message || "Lỗi khi tải ảnh lên");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSave = async () => {
-    if (!form.image_url.trim()) { toast.error("URL ảnh không được trống"); return; }
+    if (!form.image_url.trim()) { toast.error("Vui lòng tải ảnh lên hoặc nhập URL"); return; }
     try {
       if (editing) {
         await heroService.updateHero(editing.id, form);
@@ -121,9 +138,8 @@ export default function AdminHeroes() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                    h.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
-                  }`}>
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${h.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                    }`}>
                     {h.is_active ? 'Đang bật' : 'Đã tắt'}
                   </span>
                 </TableCell>
@@ -131,7 +147,7 @@ export default function AdminHeroes() {
                   <div className="flex flex-col gap-1">
                     <span className="text-xs font-medium cursor-default border w-fit px-2 py-0.5 rounded bg-muted/50">{h.button_text}</span>
                     <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                       {h.button_link} <ExternalLink className="h-2 w-2" />
+                      {h.button_link} <ExternalLink className="h-2 w-2" />
                     </span>
                   </div>
                 </TableCell>
@@ -156,31 +172,48 @@ export default function AdminHeroes() {
             <DialogTitle className="text-2xl font-black uppercase tracking-tight">{editing ? "Chỉnh sửa Hero" : "Thêm Hero mới"}</DialogTitle>
             <DialogDescription>Thiết lập nội dung hiển thị nổi bật trên trang chủ.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-6 py-4">
+          <div className="grid gap-6 py-4 max-h-[70vh] overflow-y-auto px-2">
             <div className="grid gap-2">
-              <Label className="font-bold">URL ảnh nền *</Label>
-              <Input value={form.image_url} onChange={(e) => setForm({...form, image_url: e.target.value})} placeholder="https://unsplash.com/..." className="rounded-xl h-11" />
+              <Label className="font-bold">Ảnh nền *</Label>
+              <div className="flex gap-2 items-center">
+                <div className="relative w-full">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    disabled={uploading}
+                    className="rounded-xl h-11 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
+                  />
+                  {uploading && <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-primary font-bold">Đang tải...</div>}
+                </div>
+              </div>
+              <Input
+                value={form.image_url}
+                onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+                placeholder="Hoặc nhập URL ảnh (nếu có sẵn)..."
+                className="rounded-xl h-11 text-xs text-muted-foreground mt-1"
+              />
             </div>
             <div className="grid gap-2">
               <Label className="font-bold">Tiêu đề chính (Dùng Enter để xuống dòng)</Label>
-              <Textarea value={form.title} onChange={(e) => setForm({...form, title: e.target.value})} placeholder="VÍ DỤ: PHONG CÁCH&#10;ĐỊNH HÌNH&#10;BẢN LĨNH" className="rounded-xl min-h-[100px]" />
+              <Textarea value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="VÍ DỤ: PHONG CÁCH&#10;ĐỊNH HÌNH&#10;BẢN LĨNH" className="rounded-xl min-h-[100px]" />
             </div>
             <div className="grid gap-2">
               <Label className="font-bold">Mô tả / Slogan</Label>
-              <Textarea value={form.subtitle} onChange={(e) => setForm({...form, subtitle: e.target.value})} placeholder="VÍ DỤ: BẢN LĨNH PHÁI MẠNH" className="rounded-xl min-h-[80px]" />
+              <Textarea value={form.subtitle} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} placeholder="VÍ DỤ: BẢN LĨNH PHÁI MẠNH" className="rounded-xl min-h-[80px]" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label className="font-bold">Chữ trên nút</Label>
-                <Input value={form.button_text} onChange={(e) => setForm({...form, button_text: e.target.value})} placeholder="MUA NGAY" className="rounded-xl h-11" />
+                <Input value={form.button_text} onChange={(e) => setForm({ ...form, button_text: e.target.value })} placeholder="MUA NGAY" className="rounded-xl h-11" />
               </div>
               <div className="grid gap-2">
                 <Label className="font-bold">Link khi click</Label>
-                <Input value={form.button_link} onChange={(e) => setForm({...form, button_link: e.target.value})} placeholder="/products" className="rounded-xl h-11" />
+                <Input value={form.button_link} onChange={(e) => setForm({ ...form, button_link: e.target.value })} placeholder="/products" className="rounded-xl h-11" />
               </div>
             </div>
             <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-2xl border border-dashed">
-              <Switch id="active-status" checked={form.is_active} onCheckedChange={(v) => setForm({...form, is_active: v})} />
+              <Switch id="active-status" checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
               <Label htmlFor="active-status" className="font-bold cursor-pointer">Kích hoạt hiển thị</Label>
             </div>
             {form.image_url && (
@@ -188,6 +221,8 @@ export default function AdminHeroes() {
                 <img src={form.image_url} alt="Preview" className="h-full w-full object-cover" />
               </div>
             )}
+          </div>
+          <div className="pt-2">
             <Button onClick={handleSave} size="lg" className="w-full rounded-full h-14 font-bold text-lg shadow-xl shadow-primary/20 active:scale-[0.98]">
               {editing ? "Lưu thay đổi" : "Tạo Hero ngay"}
             </Button>

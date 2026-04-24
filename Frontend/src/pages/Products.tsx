@@ -5,7 +5,7 @@ import { categoryService } from "@/services/categoryService";
 import { Product, Category } from "@/lib/types";
 import ProductCard from "@/components/features/products/ProductCard";
 import { Button } from "@/components/ui/button";
-import { SlidersHorizontal, ChevronRight, X, ArrowUpDown, Check } from "lucide-react";
+import { SlidersHorizontal, ChevronRight, X, ArrowUpDown, Check, Menu } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -114,15 +114,16 @@ export default function Products() {
 
       {/* Horizontal Filter Bar */}
       <div className={`sticky ${isScrolled ? "top-16" : "top-20"} z-40 bg-white/80 backdrop-blur-xl border-b border-black/5 transition-all duration-500`}>
-        <div className="container mx-auto px-4 flex items-center justify-between h-14 md:h-20 gap-8">
-          <div className="flex items-center gap-2 md:gap-4 overflow-x-auto no-scrollbar scroll-smooth flex-1">
+        <div className="container mx-auto px-4 flex items-center justify-between h-14 md:h-20 gap-3 md:gap-8">
+          {/* Desktop Categories */}
+          <div className="hidden md:flex items-center gap-4 overflow-x-auto no-scrollbar scroll-smooth flex-1">
             <button
               onClick={() => {
                 const p = new URLSearchParams(searchParams);
                 p.delete("category");
                 setSearchParams(p);
               }}
-              className={`whitespace-nowrap px-6 h-10 md:h-12 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-500 ${!activeCategory ? "bg-black text-white shadow-xl shadow-black/20" : "bg-transparent text-muted-foreground hover:text-black"}`}
+              className={`shrink-0 whitespace-nowrap px-6 h-12 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-500 ${!activeCategory ? "bg-black text-white shadow-xl shadow-black/20" : "bg-transparent text-muted-foreground hover:text-black"}`}
             >
               Tất cả
             </button>
@@ -134,29 +135,69 @@ export default function Products() {
                   p.set("category", String(c.id));
                   setSearchParams(p);
                 }}
-                className={`whitespace-nowrap px-6 h-10 md:h-12 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-500 ${activeCategory === String(c.id) ? "bg-black text-white shadow-xl shadow-black/20" : "bg-transparent text-muted-foreground hover:text-black"}`}
+                className={`shrink-0 whitespace-nowrap px-6 h-12 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-500 ${activeCategory === String(c.id) ? "bg-black text-white shadow-xl shadow-black/20" : "bg-transparent text-muted-foreground hover:text-black"}`}
               >
                 {c.name}
               </button>
             ))}
           </div>
 
-          <div className="flex items-center gap-3 shrink-0 ml-auto">
+          {/* Mobile Categories Dropdown */}
+          <div className="md:hidden flex-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-10 px-4 rounded-full border border-black/5 gap-2 text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all duration-500">
+                  <Menu className="h-3.5 w-3.5" />
+                  <span className="truncate max-w-[120px]">{activeCategoryName || "Tất cả danh mục"}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[200px] rounded-2xl p-2 bg-white/95 backdrop-blur-xl border-black/5 shadow-2xl">
+                <DropdownMenuItem
+                  onClick={() => {
+                    const p = new URLSearchParams(searchParams);
+                    p.delete("category");
+                    setSearchParams(p);
+                  }}
+                  className="flex items-center justify-between rounded-xl py-3 px-4 text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-black hover:text-white transition-colors"
+                >
+                  Tất cả danh mục
+                  {!activeCategory && <Check className="h-3 w-3" />}
+                </DropdownMenuItem>
+                {categories.map((c) => (
+                  <DropdownMenuItem
+                    key={c.id}
+                    onClick={() => {
+                      const p = new URLSearchParams(searchParams);
+                      p.set("category", String(c.id));
+                      setSearchParams(p);
+                    }}
+                    className="flex items-center justify-between rounded-xl py-3 px-4 text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-black hover:text-white transition-colors"
+                  >
+                    {c.name}
+                    {activeCategory === String(c.id) && <Check className="h-3 w-3" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 ml-auto">
             {/* Advanced Filters Sheet */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="lg" className="h-10 md:h-12 rounded-full border border-black/5 gap-3 text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all duration-500">
-                  <SlidersHorizontal className="h-3.5 w-3.5" /> Bộ lọc
+                <Button variant="ghost" className="h-10 md:h-12 px-3 md:px-6 rounded-full border border-black/5 gap-2 text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all duration-500">
+                  <SlidersHorizontal className="h-3.5 w-3.5" /> 
+                  <span className="hidden sm:inline">Bộ lọc</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-full sm:max-w-md p-0 border-l border-black/5 bg-white">
+              <SheetContent side="right" className="w-[95vw] sm:max-w-md p-0 border-l border-black/5 bg-white">
                 <div className="flex flex-col h-full">
-                  <SheetHeader className="p-8 border-b border-black/5">
-                    <SheetTitle className="text-3xl font-black uppercase tracking-tighter">Bộ lọc nâng cao</SheetTitle>
+                  <SheetHeader className="p-6 md:p-8 border-b border-black/5 text-left">
+                    <SheetTitle className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Bộ lọc nâng cao</SheetTitle>
                     <SheetDescription className="text-xs font-black uppercase tracking-widest text-muted-foreground">Tùy chỉnh tìm kiếm của bạn</SheetDescription>
                   </SheetHeader>
 
-                  <div className="flex-1 overflow-y-auto p-8 space-y-12">
+                  <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-10">
                     {/* Price Range Filter */}
                     <div className="space-y-6">
                       <h3 className="text-[11px] font-black uppercase tracking-[0.3em]">Khoảng giá (VNĐ)</h3>
@@ -169,7 +210,7 @@ export default function Products() {
                             placeholder="0"
                             value={minPriceInput}
                             onChange={(e) => setMinPriceInput(e.target.value)}
-                            className="h-14 rounded-2xl border-2 focus:border-black font-bold"
+                            className="h-12 md:h-14 rounded-2xl border-2 focus:border-black font-bold"
                           />
                         </div>
                         <div className="space-y-2">
@@ -180,7 +221,7 @@ export default function Products() {
                             placeholder="Vô hạn"
                             value={maxPriceInput}
                             onChange={(e) => setMaxPriceInput(e.target.value)}
-                            className="h-14 rounded-2xl border-2 focus:border-black font-bold"
+                            className="h-12 md:h-14 rounded-2xl border-2 focus:border-black font-bold"
                           />
                         </div>
                       </div>
@@ -194,7 +235,7 @@ export default function Products() {
                           <Button
                             key={price}
                             variant="outline"
-                            className="rounded-full h-10 px-6 text-[10px] font-black uppercase tracking-widest border-2"
+                            className="rounded-full h-10 px-4 md:px-6 text-[10px] font-black uppercase tracking-widest border-2"
                             onClick={() => {
                               setMinPriceInput("0");
                               setMaxPriceInput(price.toString());
@@ -207,10 +248,10 @@ export default function Products() {
                     </div>
                   </div>
 
-                  <SheetFooter className="p-8 border-t border-black/5 bg-muted/30 grid grid-cols-2 gap-4">
+                  <SheetFooter className="p-6 md:p-8 border-t border-black/5 bg-muted/30 grid grid-cols-2 gap-4">
                     <Button
                       variant="outline"
-                      className="h-14 rounded-full font-black uppercase tracking-widest text-xs border-2"
+                      className="h-12 md:h-14 rounded-full font-black uppercase tracking-widest text-xs border-2"
                       onClick={() => {
                         setMinPriceInput("");
                         setMaxPriceInput("");
@@ -224,7 +265,7 @@ export default function Products() {
                     </Button>
                     <SheetClose asChild>
                       <Button
-                        className="h-14 rounded-full font-black uppercase tracking-widest text-xs shadow-xl shadow-black/20"
+                        className="h-12 md:h-14 rounded-full font-black uppercase tracking-widest text-xs shadow-xl shadow-black/20"
                         onClick={() => {
                           const p = new URLSearchParams(searchParams);
                           if (minPriceInput) p.set("min_price", minPriceInput); else p.delete("min_price");
@@ -243,7 +284,7 @@ export default function Products() {
             {/* Sorting Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="lg" className="h-10 md:h-12 rounded-full border border-black/5 gap-3 text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all duration-500">
+                <Button variant="ghost" className="h-10 md:h-12 px-3 md:px-6 rounded-full border border-black/5 gap-2 text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all duration-500">
                   <ArrowUpDown className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Sắp xếp: {sortOptions.find(o => o.value === activeSort)?.label}</span>
                 </Button>

@@ -5,40 +5,88 @@ import { ArrowRight, ShoppingBag, Sparkles } from "lucide-react";
 import { heroService } from "@/services/heroService";
 
 export default function Hero() {
-  const [hero, setHero] = useState<any>(null);
+  const [heroes, setHeroes] = useState<any[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const defaultHeroes = [
+    {
+      image_url: "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?q=80&w=2070&auto=format&fit=crop",
+      title: "PHONG CÁCH\nĐỊNH HÌNH",
+      subtitle: "BẢN LĨNH",
+      button_text: "Mua sắm ngay",
+      button_link: "/products"
+    },
+    {
+      image_url: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070&auto=format&fit=crop",
+      title: "XU HƯỚNG\nMỚI NHẤT",
+      subtitle: "THỜI TRANG",
+      button_text: "Khám phá",
+      button_link: "/products"
+    },
+    {
+      image_url: "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop",
+      title: "BỘ SƯU TẬP\nĐỘC QUYỀN",
+      subtitle: "ĐẲNG CẤP",
+      button_text: "Xem ngay",
+      button_link: "/products"
+    }
+  ];
 
   useEffect(() => {
     heroService.getHeroes().then((data: any) => {
-      const activeHero = data?.find((h: any) => h.is_active);
-      if (activeHero) setHero(activeHero);
+      if (Array.isArray(data)) {
+        const activeHeroes = data.filter((h: any) => h.is_active);
+        if (activeHeroes.length > 0) {
+          setHeroes(activeHeroes);
+        } else {
+          setHeroes(defaultHeroes);
+        }
+      } else {
+        setHeroes(defaultHeroes);
+      }
+    }).catch(() => {
+      setHeroes(defaultHeroes);
     });
   }, []);
 
-  const defaultHero = {
-    image_url: "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?q=80&w=2070&auto=format&fit=crop",
-    title: "PHONG CÁCH ĐỊNH HÌNH",
-    subtitle: "BẢN LĨNH",
-    button_text: "Mua sắm ngay",
-    button_link: "/products"
-  };
+  useEffect(() => {
+    if (heroes.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % heroes.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [heroes.length]);
 
-  const current = hero || defaultHero;
+  const current = heroes.length > 0 ? heroes[currentIndex] : defaultHeroes[0];
 
   return (
     <section className="relative min-h-[85vh] flex items-center overflow-hidden bg-[#0a0a0a]">
       {/* Background with Gradient and Pattern */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent z-10" />
-        <img
-          src={current.image_url}
-          alt="Fashion Hero"
-          className="h-full w-full object-cover scale-105 animate-subtle-zoom"
-        />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 via-transparent to-transparent opacity-30" />
+        {heroes.length > 0 ? (
+          heroes.map((h, index) => (
+            <img
+              key={index}
+              src={h.image_url}
+              alt="Fashion Hero"
+              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
+                index === currentIndex ? "opacity-100 scale-105 animate-subtle-zoom z-0" : "opacity-0 scale-100 -z-10"
+              }`}
+            />
+          ))
+        ) : (
+          <img
+            src={current.image_url}
+            alt="Fashion Hero"
+            className="absolute inset-0 h-full w-full object-cover scale-105 animate-subtle-zoom"
+          />
+        )}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 via-transparent to-transparent opacity-30 z-10" />
       </div>
 
       <div className="container mx-auto px-4 relative z-20">
-        <div className="max-w-4xl space-y-10">
+        <div key={currentIndex} className="max-w-4xl space-y-10">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-white text-[10px] font-bold tracking-[0.3em] uppercase animate-fade-in-down">
             <Sparkles className="h-3 w-3 text-emerald-400" />
             <span>Bộ sưu tập Mới 2026</span>
@@ -95,6 +143,22 @@ export default function Hero() {
             </div>
           </div>
         </div>
+        
+        {/* Navigation Dots */}
+        {heroes.length > 1 && (
+          <div className="absolute bottom-[-20px] left-4 flex gap-2 z-30">
+            {heroes.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setCurrentIndex(idx)}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  idx === currentIndex ? "w-8 bg-white" : "w-2 bg-white/30 hover:bg-white/50"
+                }`}
+                aria-label={`Go to slide ${idx + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Scroll Indicator */}
@@ -105,3 +169,4 @@ export default function Hero() {
     </section>
   );
 }
+

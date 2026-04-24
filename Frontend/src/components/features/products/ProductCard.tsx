@@ -39,11 +39,18 @@ export default function ProductCard({ product }: Props) {
         </div>
 
         {/* Badge */}
-        {product.is_featured && (
-          <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md text-black text-[9px] font-bold px-3 py-1 uppercase tracking-[0.2em] z-10 border border-black/5">
-            Nổi bật
-          </div>
-        )}
+        <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+          {product.is_featured && (
+            <div className="bg-white/90 backdrop-blur-md text-black text-[9px] font-bold px-3 py-1 uppercase tracking-[0.2em] border border-black/5">
+              Nổi bật
+            </div>
+          )}
+          {product.variants?.length && product.variants.every(v => v.stock === 0) && (
+            <div className="bg-rose-500/90 backdrop-blur-md text-white text-[9px] font-bold px-3 py-1 uppercase tracking-[0.2em] border border-rose-600/20">
+              Hết hàng
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="p-6 space-y-2 text-center">

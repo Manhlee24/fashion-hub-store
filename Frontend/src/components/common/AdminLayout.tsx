@@ -4,6 +4,14 @@ import { useEffect, useState } from "react";
 import { LayoutDashboard, Package, FolderOpen, ShoppingCart, Image, LogOut, ArrowLeft, Menu, X, User, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const navItems = [
   { label: "Tổng quan", to: "/admin", icon: LayoutDashboard },
@@ -110,7 +118,15 @@ export default function AdminLayout() {
                        <h2 className="text-xl font-black uppercase tracking-tighter">HNAMSTORE</h2>
                        <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 italic">Admin Management</p>
                     </div>
-                    <nav className="flex-1 p-6 space-y-2">
+                    <nav className="flex-1 p-6 space-y-2 overflow-y-auto">
+                       <Link
+                         to="/"
+                         onClick={() => setIsMobileMenuOpen(false)}
+                         className="flex items-center gap-4 px-6 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all text-white/40 hover:text-white hover:bg-white/5 mb-4"
+                       >
+                         <ArrowLeft className="h-4 w-4" />
+                         Về cửa hàng
+                       </Link>
                        {navItems.map((item) => {
                          const active = location.pathname === item.to;
                          return (
@@ -128,6 +144,15 @@ export default function AdminLayout() {
                          );
                        })}
                     </nav>
+                    <div className="p-6 border-t border-white/5">
+                       <Button 
+                         variant="ghost" 
+                         onClick={() => { setIsMobileMenuOpen(false); signOut(); }} 
+                         className="w-full justify-start h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                       >
+                         <LogOut className="mr-3 h-4 w-4" /> Đăng xuất
+                       </Button>
+                    </div>
                  </div>
                </SheetContent>
              </Sheet>
@@ -141,9 +166,26 @@ export default function AdminLayout() {
              <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 rounded-full border border-black/5">
                 <Bell className="h-4 w-4 text-black/40" />
              </Button>
-             <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-black flex items-center justify-center text-[10px] font-black text-white ring-4 ring-black/5 cursor-pointer">
-                {user?.name?.charAt(0).toUpperCase() || "A"}
-             </div>
+             <DropdownMenu>
+               <DropdownMenuTrigger asChild>
+                 <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-black flex items-center justify-center text-[10px] font-black text-white ring-4 ring-black/5 cursor-pointer transition-transform hover:scale-105 active:scale-95">
+                    {user?.name?.charAt(0).toUpperCase() || "A"}
+                 </div>
+               </DropdownMenuTrigger>
+               <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 bg-white/95 backdrop-blur-xl border-black/5 shadow-2xl">
+                 <DropdownMenuLabel className="font-black uppercase tracking-widest text-[10px] text-black/40">Tài khoản quản trị</DropdownMenuLabel>
+                 <DropdownMenuSeparator className="bg-black/5" />
+                 <DropdownMenuItem asChild className="rounded-xl py-3 cursor-pointer">
+                   <Link to="/" className="flex items-center text-[10px] font-black uppercase tracking-widest hover:text-black">
+                     <ArrowLeft className="mr-2 h-4 w-4" /> Về cửa hàng
+                   </Link>
+                 </DropdownMenuItem>
+                 <DropdownMenuSeparator className="bg-black/5" />
+                 <DropdownMenuItem onClick={() => signOut()} className="rounded-xl py-3 cursor-pointer text-rose-500 focus:text-rose-600 focus:bg-rose-50">
+                   <LogOut className="mr-2 h-4 w-4" /> Đăng xuất
+                 </DropdownMenuItem>
+               </DropdownMenuContent>
+             </DropdownMenu>
           </div>
         </header>
 

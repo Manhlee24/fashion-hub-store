@@ -162,10 +162,10 @@ export default function Index() {
           </div>
           <div className="flex flex-col md:flex-row items-center justify-center gap-6 pt-8">
             <button className="h-14 px-10 bg-white text-black text-xs font-black uppercase tracking-[0.3em] hover:bg-emerald-400 transition-all duration-500 active:scale-95 shadow-2xl">
-              Theo dõi Instagram
+              <a href="https://www.instagram.com/adidas/?hl=en" target="_blank">Theo dõi Instagram</a>
             </button>
             <button className="h-14 px-10 border border-white/20 text-white text-xs font-black uppercase tracking-[0.3em] hover:bg-white hover:text-black transition-all duration-500 active:scale-95">
-              Tham gia Group
+              <a href="https://www.instagram.com/adidas/?hl=en" target="_blank">Tham gia Group</a>
             </button>
           </div>
         </div>

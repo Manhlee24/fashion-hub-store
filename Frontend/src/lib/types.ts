@@ -4,6 +4,13 @@ export interface Category {
   created_at: string;
 }
 
+export interface ProductVariant {
+  id: number;
+  product_id: number;
+  size: string;
+  stock: number;
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -13,6 +20,7 @@ export interface Product {
   category_id?: number;
   category_name?: string;
   category?: Category;
+  variants?: ProductVariant[];
   is_featured: boolean;
   status?: 'active' | 'hidden';
   size?: string;

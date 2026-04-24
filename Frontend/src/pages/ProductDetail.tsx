@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import ProductCard from "@/components/features/products/ProductCard";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -86,14 +87,28 @@ export default function ProductDetail() {
     );
   }
 
+  const variants = product?.variants || [];
+  const hasVariants = variants.length > 0;
+  const currentVariant = variants.find((v) => v.size === selectedSize);
+  const stockCount = currentVariant?.stock ?? 0;
+  const isOutOfStock = selectedSize ? stockCount === 0 : variants.every(v => v.stock === 0) && hasVariants;
+
   const handleAdd = () => {
     if (!user) {
       toast.error("Vui lòng đăng nhập để thêm sản phẩm");
       navigate("/auth");
       return;
     }
-    if (hasSize && !selectedSize) {
+    if (hasVariants && !selectedSize) {
       toast.error("Vui lòng chọn kích cỡ/size");
+      return;
+    }
+    if (currentVariant && currentVariant.stock === 0) {
+      toast.error("Size này hiện đã hết hàng");
+      return;
+    }
+    if (currentVariant && qty > currentVariant.stock) {
+      toast.error(`Sản phẩm size này chỉ còn ${currentVariant.stock} trong kho`);
       return;
     }
     addItem(
@@ -102,11 +117,11 @@ export default function ProductDetail() {
         product_name: product.name,
         price: product.price,
         image_url: product.image_url,
-        size: hasSize ? selectedSize : undefined
+        size: hasVariants ? selectedSize : undefined
       },
       qty
     );
-    toast.success(`Đã thêm ${product.name} ${hasSize ? `(Size ${selectedSize})` : ""} vào giỏ hàng`);
+    toast.success(`Đã thêm ${product.name} ${hasVariants ? `(Size ${selectedSize})` : ""} vào giỏ hàng`);
   };
 
   const handleBuyNow = () => {
@@ -115,8 +130,16 @@ export default function ProductDetail() {
       navigate("/auth");
       return;
     }
-    if (hasSize && !selectedSize) {
+    if (hasVariants && !selectedSize) {
       toast.error("Vui lòng chọn kích cỡ/size");
+      return;
+    }
+    if (currentVariant && currentVariant.stock === 0) {
+      toast.error("Size này hiện đã hết hàng");
+      return;
+    }
+    if (currentVariant && qty > currentVariant.stock) {
+      toast.error(`Sản phẩm size này chỉ còn ${currentVariant.stock} trong kho`);
       return;
     }
     navigate("/checkout", {
@@ -127,7 +150,7 @@ export default function ProductDetail() {
           price: product.price,
           image_url: product.image_url,
           quantity: qty,
-          size: hasSize ? selectedSize : undefined
+          size: hasVariants ? selectedSize : undefined
         }
       }
     });
@@ -136,12 +159,12 @@ export default function ProductDetail() {
   return (
     <div className="pb-20">
       <div className="container mx-auto px-4 py-8">
-        <nav className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-12 animate-fade-in">
-          <Link to="/" className="hover:text-black transition-colors">HNAMSTORE</Link>
-          <ChevronRight className="h-3 w-3" />
-          <Link to="/products" className="hover:text-black transition-colors">Sản phẩm</Link>
-          <ChevronRight className="h-3 w-3" />
-          <span className="text-black truncate max-w-[200px]">{product.name}</span>
+        <nav className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-12 animate-fade-in">
+          <Link to="/" className="hover:text-black transition-colors shrink-0">HNAMSTORE</Link>
+          <ChevronRight className="h-3 w-3 shrink-0" />
+          <Link to="/products" className="hover:text-black transition-colors shrink-0">Sản phẩm</Link>
+          <ChevronRight className="h-3 w-3 shrink-0" />
+          <span className="text-black truncate max-w-[150px] sm:max-w-[300px]">{product.name}</span>
         </nav>
       </div>
 
@@ -155,10 +178,19 @@ export default function ProductDetail() {
                 <div className="flex h-full items-center justify-center text-muted-foreground">Không có ảnh</div>
               )}
             </div>
-            {product.is_featured && (
-              <Badge className="absolute top-6 left-6 bg-white/90 text-black hover:bg-white px-4 py-1.5 rounded-full font-bold shadow-lg border-none backdrop-blur">
-                Nổi bật
-              </Badge>
+            {(product.is_featured || isOutOfStock) && (
+              <div className="absolute top-6 left-6 flex flex-col gap-2">
+                {product.is_featured && (
+                  <Badge className="bg-white/90 text-black hover:bg-white px-4 py-1.5 rounded-full font-bold shadow-lg border-none backdrop-blur">
+                    Nổi bật
+                  </Badge>
+                )}
+                {isOutOfStock && (
+                  <Badge variant="destructive" className="px-4 py-1.5 rounded-full font-bold shadow-lg border-none">
+                    Hết hàng
+                  </Badge>
+                )}
+              </div>
             )}
           </div>
 
@@ -184,23 +216,84 @@ export default function ProductDetail() {
                 </p>
               </div>
 
-              {hasSize && (
+              {hasVariants && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold uppercase tracking-wider">Kích cỡ / Size</h3>
-                    <button className="text-[10px] font-bold text-muted-foreground uppercase underline underline-offset-4 hover:text-primary transition-colors">Hướng dẫn chọn size</button>
+                    <h3 className="text-sm font-bold uppercase tracking-wider">
+                      Kích cỡ / Size {selectedSize && currentVariant && (
+                        <span className={`ml-2 normal-case font-medium ${currentVariant.stock <= 5 ? 'text-rose-500' : 'text-muted-foreground'}`}>
+                          ({currentVariant.stock > 0 ? `Còn ${currentVariant.stock} sản phẩm` : 'Đã hết hàng'})
+                        </span>
+                      )}
+                    </h3>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <button className="text-[10px] font-bold text-muted-foreground uppercase underline underline-offset-4 hover:text-primary transition-colors">Hướng dẫn chọn size</button>
+                      </DialogTrigger>
+                      <DialogContent className="w-[95vw] max-w-xl bg-[#FBFBFB] border-none shadow-2xl rounded-[32px] p-0 overflow-hidden">
+                        <DialogHeader className="p-6 sm:p-8 pb-0 text-left">
+                          <DialogTitle className="text-xl sm:text-2xl font-black uppercase tracking-tight">Hướng dẫn chọn size {isShoe ? "Giày dép" : "Quần áo"}</DialogTitle>
+                        </DialogHeader>
+                        <div className="p-6 sm:p-8 pt-4 sm:pt-6">
+                          <div className="overflow-x-auto">
+                            {isShoe ? (
+                              <table className="w-full text-sm min-w-[300px]">
+                                <thead>
+                                  <tr className="border-b-2 border-black/20">
+                                    <th className="py-3 text-left font-black uppercase tracking-widest text-[10px]">Size VN</th>
+                                    <th className="py-3 text-left font-black uppercase tracking-widest text-[10px]">Chiều dài chân (cm)</th>
+                                    <th className="py-3 text-left font-black uppercase tracking-widest text-[10px]">US Size</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr className="border-b border-black/5"><td className="py-3 font-bold">39</td><td className="py-3">24.5</td><td className="py-3">6.5</td></tr>
+                                  <tr className="border-b border-black/5"><td className="py-3 font-bold">40</td><td className="py-3">25.0</td><td className="py-3">7</td></tr>
+                                  <tr className="border-b border-black/5"><td className="py-3 font-bold">41</td><td className="py-3">26.0</td><td className="py-3">8</td></tr>
+                                  <tr className="border-b border-black/5"><td className="py-3 font-bold">42</td><td className="py-3">26.5</td><td className="py-3">8.5</td></tr>
+                                  <tr className="border-b border-black/5"><td className="py-3 font-bold">43</td><td className="py-3">27.5</td><td className="py-3">9.5</td></tr>
+                                  <tr className="border-b border-black/5"><td className="py-3 font-bold">44</td><td className="py-3">28.0</td><td className="py-3">10</td></tr>
+                                </tbody>
+                              </table>
+                            ) : (
+                              <table className="w-full text-sm min-w-[300px]">
+                                <thead>
+                                  <tr className="border-b-2 border-black/20">
+                                    <th className="py-3 text-left font-black uppercase tracking-widest text-[10px]">Size</th>
+                                    <th className="py-3 text-left font-black uppercase tracking-widest text-[10px]">Chiều cao (cm)</th>
+                                    <th className="py-3 text-left font-black uppercase tracking-widest text-[10px]">Cân nặng (kg)</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr className="border-b border-black/5"><td className="py-3 font-bold">S</td><td className="py-3">155 - 160</td><td className="py-3">45 - 50</td></tr>
+                                  <tr className="border-b border-black/5"><td className="py-3 font-bold">M</td><td className="py-3">160 - 165</td><td className="py-3">50 - 55</td></tr>
+                                  <tr className="border-b border-black/5"><td className="py-3 font-bold">L</td><td className="py-3">165 - 170</td><td className="py-3">55 - 65</td></tr>
+                                  <tr className="border-b border-black/5"><td className="py-3 font-bold">XL</td><td className="py-3">170 - 175</td><td className="py-3">65 - 75</td></tr>
+                                  <tr className="border-b border-black/5"><td className="py-3 font-bold">XXL</td><td className="py-3">175 - 180</td><td className="py-3">75 - 85</td></tr>
+                                </tbody>
+                              </table>
+                            )}
+                          </div>
+                          <p className="mt-6 text-xs text-muted-foreground font-medium italic">* Bảng kích thước mang tính chất tham khảo. Xin liên hệ để được tư vấn.</p>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                   <div className="flex flex-wrap gap-3">
-                    {sizes.map((s) => (
+                    {variants.map((v) => (
                       <button
-                        key={s}
-                        onClick={() => setSelectedSize(s)}
-                        className={`h-12 min-w-[3rem] px-4 rounded-xl border-2 font-bold text-sm transition-all duration-300 active:scale-95 ${selectedSize === s
+                        key={v.size}
+                        onClick={() => setSelectedSize(v.size)}
+                        className={`h-12 min-w-[3rem] px-4 rounded-xl border-2 font-bold text-sm transition-all duration-300 active:scale-95 relative ${selectedSize === v.size
                             ? "border-primary bg-primary text-white shadow-lg shadow-primary/20 scale-105"
                             : "border-black/5 hover:border-black/20 text-foreground"
-                          }`}
+                          } ${v.stock === 0 ? 'opacity-50 grayscale' : ''}`}
                       >
-                        {s}
+                        {v.size}
+                        {v.stock === 0 && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-full h-[2px] bg-rose-500/50 rotate-45" />
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -226,22 +319,48 @@ export default function ProductDetail() {
             </div>
 
             <div className="mt-8 space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center border-2 border-primary/10 rounded-full h-14 bg-white overflow-hidden shadow-sm">
-                  <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-12 h-full hover:bg-muted transition-colors px-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                <div className="flex items-center justify-between sm:justify-center border-2 border-primary/10 rounded-full h-14 bg-white overflow-hidden shadow-sm shrink-0 px-2 sm:px-0 sm:w-auto">
+                  <button 
+                    disabled={isOutOfStock}
+                    onClick={() => setQty(Math.max(1, qty - 1))} 
+                    className="w-12 h-full flex items-center justify-center hover:bg-muted transition-colors disabled:opacity-30 rounded-full sm:rounded-none"
+                  >
                     <Minus className="h-4 w-4" />
                   </button>
-                  <span className="w-8 text-center font-bold text-lg tabular-nums">{qty}</span>
-                  <button onClick={() => setQty(qty + 1)} className="w-12 h-full hover:bg-muted transition-colors px-3">
+                  <span className="w-12 text-center font-bold text-lg tabular-nums">{qty}</span>
+                  <button 
+                    disabled={isOutOfStock || (currentVariant && qty >= currentVariant.stock)}
+                    onClick={() => {
+                      if (currentVariant && qty >= currentVariant.stock) {
+                        toast.error(`Chỉ có thể mua tối đa ${currentVariant.stock} sản phẩm`);
+                        return;
+                      }
+                      setQty(qty + 1);
+                    }} 
+                    className="w-12 h-full flex items-center justify-center hover:bg-muted transition-colors disabled:opacity-30 rounded-full sm:rounded-none"
+                  >
                     <Plus className="h-4 w-4" />
                   </button>
                 </div>
-                <Button onClick={handleAdd} size="lg" variant="outline" className="flex-1 h-14 text-lg font-bold border-2 border-primary hover:bg-primary hover:text-white rounded-full">
-                  <ShoppingBag className="mr-2 h-5 w-5" /> Thêm vào giỏ
+                <Button 
+                  onClick={handleAdd} 
+                  disabled={isOutOfStock || (hasVariants && !selectedSize)}
+                  size="lg" 
+                  variant="outline" 
+                  className="flex-1 h-14 text-sm sm:text-lg font-bold border-2 border-primary hover:bg-primary hover:text-white rounded-full disabled:opacity-50 whitespace-nowrap"
+                >
+                  <ShoppingBag className="mr-2 h-5 w-5 shrink-0" /> 
+                  <span className="truncate">{isOutOfStock ? "HẾT HÀNG" : "Thêm vào giỏ"}</span>
                 </Button>
               </div>
-              <Button onClick={handleBuyNow} size="lg" className="h-14 w-full text-xl font-black rounded-full shadow-lg shadow-primary/20">
-                MUA NGAY
+              <Button 
+                onClick={handleBuyNow} 
+                disabled={isOutOfStock || (hasVariants && !selectedSize)}
+                size="lg" 
+                className="h-14 w-full text-xl font-black rounded-full shadow-lg shadow-primary/20 disabled:opacity-50"
+              >
+                {isOutOfStock ? "SẢN PHẨM HẾT HÀNG" : "MUA NGAY"}
               </Button>
             </div>
           </div>
